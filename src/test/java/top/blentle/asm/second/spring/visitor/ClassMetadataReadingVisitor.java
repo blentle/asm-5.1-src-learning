@@ -26,12 +26,12 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements ClassMe
     private boolean isFinal;
 
     /**
-     *  是否有内部类
+     * 外部类的类名称
      */
     private String enclosingClassName;
 
     /**
-     *  内部类是否是可以被new 出来的
+     * 要么没有外部类，即自身是顶层的类，要么是静态内部类
      */
     private boolean independentInnerClass;
 
@@ -43,7 +43,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements ClassMe
 
 
     public ClassMetadataReadingVisitor() {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
     }
 
 
@@ -72,31 +72,67 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements ClassMe
     }
 
     public boolean hasEnclosingClass() {
-        return false;
+        return this.enclosingClassName != null;
     }
 
     public String getEnclosingClassName() {
-        return null;
+        return this.enclosingClassName;
     }
 
     public boolean hasSuperClass() {
-        return false;
+        return this.superClassName != null;
     }
 
     public String getSuperClassName() {
-        return null;
+        return this.superClassName;
     }
 
     public String[] getInterfaceNames() {
-        return new String[0];
+        return this.interfaces;
     }
 
     public String[] getMemberClassNames() {
-        return new String[0];
+        return this.memberClassNames.toArray(new String[this.memberClassNames.size()]);
     }
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-        System.err.println(".............");
+        this.className = name.replaceAll("/", ".");
+        this.isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+        this.isAbstract = (access & Opcodes.ACC_ABSTRACT) != 0;
+        this.isFinal = (access & Opcodes.ACC_FINAL) != 0;
+        if (superName != null)
+            this.superClassName = superName.replaceAll("/", ".");
+        this.interfaces = new String[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            this.interfaces[i] = interfaces[i].replaceAll("/", ".");
+        }
+    }
+
+    /**
+     * @param owner 宿主类
+     *              internal name of the enclosing class of the class.
+     * @param name  the name of the method that contains the class, or
+     *              <tt>null</tt> if the class is not enclosed in a method of its
+     *              enclosing class.
+     * @param desc  the descriptor of the method that contains the class, or
+     *              <tt>null</tt> if the class is not enclosed in a method of its
+     */
+    @Override
+    public void visitOuterClass(String owner, String name, String desc) {
+        this.enclosingClassName = owner.replaceAll("/", ".");
+    }
+
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {
+        if (outerName != null) {
+            String fqName = name.replaceAll("/", ".");
+            String fqOuterName = outerName.replaceAll("/", ".");
+            if (this.className.equals(fqName)) {
+                this.enclosingClassName = fqOuterName;
+                this.independentInnerClass = ((access & Opcodes.ACC_STATIC) != 0);
+            } else if (this.className.equals(fqOuterName)) {
+                this.memberClassNames.add(fqName);
+            }
+        }
     }
 }
