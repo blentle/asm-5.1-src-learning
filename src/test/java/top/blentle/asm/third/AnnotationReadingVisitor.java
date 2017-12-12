@@ -3,6 +3,9 @@ package top.blentle.asm.third;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * @author :  renhuan
  * @email : blentle.huan.ren@gmail.com
@@ -14,9 +17,12 @@ public class AnnotationReadingVisitor extends AnnotationVisitor {
 
     private String className;
 
-    public AnnotationReadingVisitor(String className) {
+    private Set<String> set;
+
+    public AnnotationReadingVisitor(String className, Set<String> set) {
         super(Opcodes.ASM5);
         this.className = className;
+        this.set = set;
     }
 
     @Override
@@ -43,6 +49,8 @@ public class AnnotationReadingVisitor extends AnnotationVisitor {
 
     @Override
     public void visitEnd() {
+        set.add(className);
+        System.err.println("..........这个方法一定会被调用...................");
         super.visitEnd();
     }
 }

@@ -18,6 +18,8 @@ import java.util.Set;
  */
 public class ClassMetadataReadingVisitor extends ClassVisitor{
 
+    private Set<String> set = new LinkedHashSet<String>();
+
 
     private String className;
 
@@ -114,6 +116,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor{
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         String className = Type.getType(desc).getClassName();
-        return new AnnotationReadingVisitor(className);
+        return new AnnotationReadingVisitor(className,set);
     }
 }
