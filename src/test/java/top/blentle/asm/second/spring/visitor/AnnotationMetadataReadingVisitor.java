@@ -1,7 +1,9 @@
 package top.blentle.asm.second.spring.visitor;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import top.blentle.asm.second.spring.entity.AnnotationAttributes;
 import top.blentle.asm.second.spring.entity.AnnotationMetadata;
 import top.blentle.asm.second.spring.entity.MethodMetadata;
@@ -21,13 +23,19 @@ import java.util.Set;
  */
 public class AnnotationMetadataReadingVisitor extends ClassMetadataReadingVisitor implements AnnotationMetadata {
 
+    private final ClassLoader classLoader;
+
+    public AnnotationMetadataReadingVisitor(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
     /**
      * 类上的注释
      */
     private final Set<String> annotationSet = new LinkedHashSet<String>(4);
 
     /**
-     * 元注释:即注释上没有注释了，最基层的注释
+     * 元注释:即注释上的注释了，最基层的注释
      */
     private final Map<String, Set<String>> metaAnnotationMap = new LinkedHashMap<String, Set<String>>(4);
 
@@ -49,8 +57,14 @@ public class AnnotationMetadataReadingVisitor extends ClassMetadataReadingVisito
         if ((access & Opcodes.ACC_BRIDGE) != 0) {
             return super.visitMethod(access, name, desc, signature, exceptions);
         }
-        System.err.println("........");
-        return null;
+        return new MethodMetadataReadingVisitor(name, access, getClassName(), this.classLoader, methodMetadataSet);
+    }
+
+    @Override
+    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        String className = Type.getType(desc).getClassName();
+        this.annotationSet.add(className);
+        return new AnnotationAttributesReadingVisitor(this.classLoader,className,attributeMap,metaAnnotationMap);
     }
 
     public Set<String> getAnnotationTypes() {
@@ -112,7 +126,7 @@ public class AnnotationMetadataReadingVisitor extends ClassMetadataReadingVisito
     }
 
     private Map<String, Object> convertClassValues(AnnotationAttributes raw, boolean classValuesAsString) {
-        if(raw == null)
+        if (raw == null)
             return null;
         //先复制一份
         AnnotationAttributes result = new AnnotationAttributes(raw.size());

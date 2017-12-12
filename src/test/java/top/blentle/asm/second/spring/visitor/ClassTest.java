@@ -1,5 +1,7 @@
 package top.blentle.asm.second.spring.visitor;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.jws.WebService;
 import javax.management.MXBean;
 import java.util.HashMap;
@@ -13,7 +15,11 @@ import java.util.HashMap;
  */
 @MXBean
 @WebService
+@Configuration
 public class ClassTest extends HashMap implements Runnable {
+
+    @Resource
+    @PostConstruct
     public void run() {
         System.err.println(".....");
     }
